@@ -1,0 +1,316 @@
+# Instructivo: Desplegar PostgreSQL con Docker y crear tablas básicas
+
+Este instructivo muestra cómo levantar una base de datos PostgreSQL usando Docker Compose, conectarla con DBeaver y crear 3 tablas relacionadas con consultas básicas.
+
+## 1. Requisitos previos
+
+Antes de iniciar, debes tener instalado:
+
+- Docker
+- Docker Compose
+- DBeaver o algún cliente para conectarte a PostgreSQL
+
+Puedes verificar Docker con:
+
+```bash
+docker --version
+docker compose version
+```
+
+## 2. Crear carpeta del proyecto
+
+Crea una carpeta para el proyecto:
+
+```bash
+mkdir docker-postgresql
+cd docker-postgresql
+```
+
+## 3. Crear archivo docker-compose.yml
+
+Dentro de la carpeta crea el archivo:
+
+```bash
+nano docker-compose.yml
+```
+
+Agrega esta configuración:
+
+```yaml
+services:
+  db:
+    image: postgres:17
+    container_name: riwi-postgres
+
+    environment:
+      POSTGRES_DB: riwi_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres123
+
+    ports:
+      - "5433:5432"
+
+    volumes:
+      - riwi-db-data:/var/lib/postgresql/data
+
+volumes:
+  riwi-db-data:
+```
+
+Guarda el archivo con:
+
+```bash
+Ctrl + O
+Enter
+Ctrl + X
+```
+
+## 4. Levantar PostgreSQL con Docker
+
+Ejecuta:
+
+```bash
+docker compose up -d
+```
+
+Verifica que el contenedor esté corriendo:
+
+```bash
+docker ps
+```
+
+Deberías ver un contenedor llamado:
+
+```text
+riwi-postgres
+```
+
+## 5. Ver logs del contenedor
+
+Si quieres revisar que PostgreSQL inició correctamente:
+
+```bash
+docker logs riwi-postgres
+```
+
+## 6. Conectarse desde DBeaver
+
+En DBeaver crea una conexión PostgreSQL con estos datos:
+
+```text
+Host: localhost
+Port: 5433
+Database: riwi_db
+Username: postgres
+Password: postgres123
+```
+
+Luego haz clic en:
+
+```text
+Test Connection
+```
+
+Si todo está bien, presiona:
+
+```text
+Finish
+```
+
+## 7. Conectarse desde la terminal
+
+También puedes entrar directamente al contenedor con:
+
+```bash
+docker exec -it riwi-postgres psql -U postgres -d riwi_db
+```
+
+## 8. Crear tablas
+
+Vamos a crear 3 tablas:
+
+- students
+- courses
+- enrollments
+
+La relación será:
+
+- Un estudiante puede estar inscrito en varios cursos.
+- Un curso puede tener varios estudiantes.
+- La tabla enrollments une estudiantes con cursos.
+
+Ejecuta este SQL en DBeaver o en la terminal de PostgreSQL:
+
+```sql
+CREATE TABLE students (
+    id SERIAL PRIMARY KEY,
+    first_name VARCHAR(80) NOT NULL,
+    last_name VARCHAR(80) NOT NULL,
+    email VARCHAR(120) UNIQUE NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE courses (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(120) NOT NULL,
+    description TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE enrollments (
+    id SERIAL PRIMARY KEY,
+    student_id INT NOT NULL,
+    course_id INT NOT NULL,
+    enrollment_date DATE DEFAULT CURRENT_DATE,
+
+    CONSTRAINT fk_enrollment_student
+        FOREIGN KEY (student_id)
+        REFERENCES students(id)
+        ON DELETE CASCADE,
+
+    CONSTRAINT fk_enrollment_course
+        FOREIGN KEY (course_id)
+        REFERENCES courses(id)
+        ON DELETE CASCADE
+);
+```
+
+## 9. Insertar datos de prueba
+
+```sql
+INSERT INTO students (first_name, last_name, email)
+VALUES
+('Javier', 'Ariza', 'javier@example.com'),
+('Laura', 'Martinez', 'laura@example.com'),
+('Carlos', 'Perez', 'carlos@example.com');
+
+INSERT INTO courses (name, description)
+VALUES
+('Bases de Datos', 'Curso introductorio de bases de datos relacionales'),
+('Java Backend', 'Curso de backend con Java y Spring Boot'),
+('Frontend Angular', 'Curso de desarrollo frontend con Angular');
+
+INSERT INTO enrollments (student_id, course_id)
+VALUES
+(1, 1),
+(1, 2),
+(2, 1),
+(3, 3);
+```
+
+## 10. Consultas básicas
+
+### Consultar todos los estudiantes
+
+```sql
+SELECT * FROM students;
+```
+
+### Consultar todos los cursos
+
+```sql
+SELECT * FROM courses;
+```
+
+### Consultar todas las inscripciones
+
+```sql
+SELECT * FROM enrollments;
+```
+
+### Consultar estudiantes con sus cursos
+
+```sql
+SELECT 
+    s.id AS student_id,
+    s.first_name,
+    s.last_name,
+    s.email,
+    c.name AS course_name,
+    e.enrollment_date
+FROM enrollments e
+INNER JOIN students s ON e.student_id = s.id
+INNER JOIN courses c ON e.course_id = c.id;
+```
+
+### Consultar los cursos de un estudiante específico
+
+```sql
+SELECT 
+    s.first_name,
+    s.last_name,
+    c.name AS course_name
+FROM enrollments e
+INNER JOIN students s ON e.student_id = s.id
+INNER JOIN courses c ON e.course_id = c.id
+WHERE s.id = 1;
+```
+
+### Contar estudiantes por curso
+
+```sql
+SELECT 
+    c.name AS course_name,
+    COUNT(e.student_id) AS total_students
+FROM courses c
+LEFT JOIN enrollments e ON c.id = e.course_id
+GROUP BY c.name;
+```
+
+## 11. Actualizar datos
+
+Actualizar el correo de un estudiante:
+
+```sql
+UPDATE students
+SET email = 'javier.ariza@example.com'
+WHERE id = 1;
+```
+
+## 12. Eliminar datos
+
+Eliminar una inscripción:
+
+```sql
+DELETE FROM enrollments
+WHERE id = 1;
+```
+
+Eliminar un estudiante:
+
+```sql
+DELETE FROM students
+WHERE id = 3;
+```
+
+Como la relación tiene `ON DELETE CASCADE`, si eliminas un estudiante, también se eliminan sus inscripciones.
+
+## 13. Detener el contenedor
+
+Para detener PostgreSQL:
+
+```bash
+docker compose down
+```
+
+## 14. Eliminar contenedor y datos
+
+Si deseas borrar completamente la base de datos y el volumen:
+
+```bash
+docker compose down -v
+```
+
+Importante: este comando elimina los datos guardados en PostgreSQL.
+
+## 15. Resumen de conexión
+
+```text
+Motor: PostgreSQL
+Host: localhost
+Puerto: 5433
+Base de datos: riwi_db
+Usuario: postgres
+Contraseña: postgres123
+Contenedor: riwi-postgres
+```
