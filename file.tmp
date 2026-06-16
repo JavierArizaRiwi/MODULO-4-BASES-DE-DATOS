@@ -285,7 +285,7 @@ DELETE FROM students
 WHERE id = 3;
 ```
 
-Como la relación tiene `ON DELETE CASCADE`, si eliminas un estudiante, también se eliminan sus inscripciones.
+> **Nota:** Como la relación tiene `ON DELETE CASCADE` en la tabla `enrollments`, al eliminar al estudiante (ID 3), la base de datos automáticamente eliminará sus inscripciones.
 
 ## 13. Detener el contenedor
 
