@@ -166,15 +166,20 @@ CREATE TABLE enrollments (
     enrollment_date DATE DEFAULT CURRENT_DATE,
 
     CONSTRAINT fk_enrollment_student
-        FOREIGN KEY (student_id)
-        REFERENCES students(id)
-        ON DELETE CASCADE,
+      FOREIGN KEY (student_id)
+      REFERENCES students(id)
+      ON DELETE CASCADE,
 
     CONSTRAINT fk_enrollment_course
-        FOREIGN KEY (course_id)
-        REFERENCES courses(id)
-        ON DELETE CASCADE
+      FOREIGN KEY (course_id)
+      REFERENCES courses(id)
+      ON DELETE CASCADE
 );
+
+-- Nota sobre ON DELETE:
+-- ON DELETE CASCADE: Si se borra un estudiante o un curso, sus inscripciones asociadas se borran automáticamente. Útil para registros dependientes.
+-- ON DELETE RESTRICT (o NO ACTION): Es el comportamiento por defecto. La base de datos impediría borrar un estudiante o curso si tiene inscripciones activas.
+
 ```
 
 ## 9. Insertar datos de prueba

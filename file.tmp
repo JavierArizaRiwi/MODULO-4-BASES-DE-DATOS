@@ -285,11 +285,11 @@ DELETE FROM students
 WHERE id = 3;
 ```
 
-> **Nota:** Como la relación tiene `ON DELETE CASCADE` en la tabla `enrollments`, al eliminar al estudiante (ID 3), la base de datos automáticamente eliminará sus inscripciones.
+> **Nota:** Como la relación en `enrollments` se definió con `ON DELETE CASCADE`, al eliminar al estudiante con ID 3, la base de datos automáticamente eliminará todas las filas en `enrollments` donde `student_id` era 3.
 
 ## 13. Detener el contenedor
 
-Para detener PostgreSQL:
+Para detener el contenedor de PostgreSQL sin borrar los datos:
 
 ```bash
 docker compose down
@@ -316,3 +316,17 @@ Usuario: postgres
 Contraseña: postgres123
 Contenedor: riwi-postgres
 ```
+
+---
+
+## 🚀 Próximos Pasos: Conectando tu Base de Datos a una API
+
+¡Felicidades! Has aprendido a desplegar una base de datos, definir su estructura y manipular sus datos con SQL.
+
+El siguiente paso en tu carrera como desarrollador es aprender a exponer estos datos de forma segura y controlada a través de una **API REST**. En el próximo módulo, utilizarás los conceptos que practicaste aquí para:
+
+1.  **Construir un servidor backend** con tecnologías como Express (Node.js) o Flask (Python).
+2.  **Crear endpoints** (rutas) para realizar operaciones CRUD (`/students`, `/courses`, etc.).
+3.  **Conectar tu aplicación** a esta misma base de datos PostgreSQL para que un frontend (una página web o una app móvil) pueda consumir, crear y modificar la información de forma dinámica.
+
+¡Prepárate para darle vida a tus datos!

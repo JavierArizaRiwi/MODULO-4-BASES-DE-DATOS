@@ -37,13 +37,19 @@ Varios registros de la Tabla A se relacionan con varios registros de la Tabla B.
 ---
 
 ## Normalización
-Es el proceso de diseñar y estructurar las tablas para evitar **redundancia** (datos repetidos) y asegurar la **integridad**.
+Es el proceso de diseñar y estructurar las tablas de una base de datos para minimizar la **redundancia** (datos repetidos) y mejorar la **integridad** de los datos. Seguir las formas normales ayuda a prevenir problemas de actualización y a mantener una base de datos lógica y organizada.
 
 ### 1FN (Primera Forma Normal)
-**Regla:** Valores atómicos. No se permiten listas ni grupos de datos en una sola celda (Ej: No puedes tener un solo campo "telefonos" con "300123, 312456").
+**Regla: Atomicidad de los datos.** Cada celda de una tabla debe contener un único valor, y no pueden existir grupos o listas de valores en una misma celda.
+*   **❌ Incorrecto:** Una columna `telefonos` con el valor `"300123, 312456"`.
+*   **✅ Correcto:** Crear una tabla separada `telefonos_usuario` que relacione al usuario con sus múltiples números.
 
 ### 2FN (Segunda Forma Normal)
-**Regla:** Eliminar dependencias parciales. Toda columna que no sea clave debe depender completamente de toda la clave principal, no solo de una parte de ella.
+**Regla: Dependencia funcional completa.** Se aplica a tablas con claves primarias compuestas (más de una columna). Establece que todos los atributos que no son clave deben depender de la clave primaria completa, no solo de una parte de ella.
 
 ### 3FN (Tercera Forma Normal)
-**Regla:** Eliminar dependencias transitivas. Las columnas que no son clave no deben depender de otros campos que tampoco son clave (Ej: Si tienes una tabla Empleados, la columna "Nombre_Ciudad" no debe estar ahí si ya tienes un "Ciudad_ID").
+**Regla: Eliminar dependencias transitivas.** Ningún atributo que no sea clave debe depender de otro atributo que tampoco es clave.
+*   **Ejemplo:** Si tienes una tabla `pedidos` con columnas `cliente_id`, `cliente_direccion` y `fecha_pedido`. La dirección del cliente (`cliente_direccion`) depende del cliente (`cliente_id`), no del pedido en sí.
+*   **✅ Correcto:** La dirección debe estar en la tabla `clientes`, no repetirse en cada pedido. La tabla `pedidos` solo necesita `cliente_id`.
+
+> **💡 Nota Avanzada:** Aunque la normalización es fundamental, en sistemas de alto rendimiento a veces se aplica la **desnormalización** de forma controlada. Esto implica duplicar datos estratégicamente para acelerar las consultas de lectura, evitando `JOINs` complejos a costa de un mayor uso de espacio y una lógica de actualización más cuidadosa.
