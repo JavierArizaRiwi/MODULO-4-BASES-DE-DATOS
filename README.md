@@ -2,6 +2,16 @@
 
 ¡Bienvenido al módulo de Bases de Datos! Este instructivo práctico te guiará paso a paso para levantar una base de datos PostgreSQL usando Docker Compose, conectarla con DBeaver y crear 3 tablas relacionadas para realizar consultas básicas.
 
+## Ruta de aprendizaje
+
+1. [Fundamentos de bases de datos](./01_Fundamentos_Bases_Datos.md)
+2. [Guía completa de SQL](./02_SQL_Completo.md)
+3. [PostgreSQL con Docker y DBeaver](./03_PostgreSQL_Docker_DBeaver.md)
+4. [Laboratorio SQL](./04_Laboratorio_SQL.md)
+5. [Mejores prácticas, seguridad y backups](./05_Mejores_Practicas.md)
+6. [Normalización paso a paso](./06_Normalizacion_Paso_a_Paso.md)
+7. [Consultas SQL avanzadas](./07_SQL_Consultas_Avanzadas.md)
+
 > **💡 Nota Teórica:** Antes de empezar la práctica, es muy recomendable leer el archivo [`01_Fundamentos_Bases_Datos.md`](./01_Fundamentos_Bases_Datos.md) para comprender los conceptos básicos que aplicaremos aquí.
 
 ## 1. Requisitos previos
