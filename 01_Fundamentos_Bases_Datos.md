@@ -44,12 +44,20 @@ Es el proceso de diseñar y estructurar las tablas de una base de datos para min
 *   **❌ Incorrecto:** Una columna `telefonos` con el valor `"300123, 312456"`.
 *   **✅ Correcto:** Crear una tabla separada `telefonos_usuario` que relacione al usuario con sus múltiples números.
 
+Otro caso incorrecto es tener columnas `curso_1`, `curso_2` y `curso_3`. Si un estudiante toma un cuarto curso, habría que cambiar la estructura. La solución es una tabla de inscripciones: una fila por cada estudiante y curso.
+
 ### 2FN (Segunda Forma Normal)
 **Regla: Dependencia funcional completa.** Se aplica a tablas con claves primarias compuestas (más de una columna). Establece que todos los atributos que no son clave deben depender de la clave primaria completa, no solo de una parte de ella.
+
+**Ejemplo:** en `inscripciones(student_id, course_id, student_name, course_name, grade)`, la clave es `(student_id, course_id)`. La columna `grade` sí depende de la inscripción completa; pero `student_name` depende solo de `student_id` y `course_name` solo de `course_id`. Para cumplir 2FN, se crean las tablas `students`, `courses` e `enrollments`, dejando en `enrollments` solo los datos propios de la relación, como la nota o la fecha de inscripción.
 
 ### 3FN (Tercera Forma Normal)
 **Regla: Eliminar dependencias transitivas.** Ningún atributo que no sea clave debe depender de otro atributo que tampoco es clave.
 *   **Ejemplo:** Si tienes una tabla `pedidos` con columnas `cliente_id`, `cliente_direccion` y `fecha_pedido`. La dirección del cliente (`cliente_direccion`) depende del cliente (`cliente_id`), no del pedido en sí.
 *   **✅ Correcto:** La dirección debe estar en la tabla `clientes`, no repetirse en cada pedido. La tabla `pedidos` solo necesita `cliente_id`.
+
+**Otro ejemplo:** en `employees(id, name, city_id, city_name)`, `city_name` depende de `city_id`, no directamente del empleado. Se crea `cities(id, name)` y `employees` conserva `city_id` como llave foránea.
+
+Para una explicación con tablas, SQL y el proceso completo, consulta la [guía de normalización paso a paso](./06_Normalizacion_Paso_a_Paso.md).
 
 > **💡 Nota Avanzada:** Aunque la normalización es fundamental, en sistemas de alto rendimiento a veces se aplica la **desnormalización** de forma controlada. Esto implica duplicar datos estratégicamente para acelerar las consultas de lectura, evitando `JOINs` complejos a costa de un mayor uso de espacio y una lógica de actualización más cuidadosa.
