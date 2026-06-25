@@ -11,6 +11,7 @@
 5. [Mejores prácticas, seguridad y backups](./05_Mejores_Practicas.md)
 6. [Normalización paso a paso](./06_Normalizacion_Paso_a_Paso.md)
 7. [Consultas SQL avanzadas](./07_SQL_Consultas_Avanzadas.md)
+8. [Servidor Express conectado a PostgreSQL con pg](./08_Express_PostgreSQL_pg.md)
 
 > **💡 Nota Teórica:** Antes de empezar la práctica, es muy recomendable leer el archivo [`01_Fundamentos_Bases_Datos.md`](./01_Fundamentos_Bases_Datos.md) para comprender los conceptos básicos que aplicaremos aquí.
 
