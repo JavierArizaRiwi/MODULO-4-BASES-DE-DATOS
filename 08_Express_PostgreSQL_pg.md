@@ -1,67 +1,55 @@
-# Guía paso a paso: crear un servidor con Express y conectarlo a PostgreSQL usando `pg`
+# Guía fácil: servidor Express conectado a PostgreSQL con `pg`
 
-Esta guía explica cómo crear una API básica con **Node.js**, **Express** y la librería **pg** para conectarse a una base de datos PostgreSQL.
+Esta guía muestra cómo crear una API sencilla con **Node.js**, **Express** y **PostgreSQL**.
 
-La idea es que entiendas el flujo completo:
+La idea es separar el proyecto en pocos archivos:
 
 ```text
-Cliente / Navegador / Postman
+Cliente / Postman / Thunder Client
         ↓
 Servidor Express
         ↓
-Librería pg
+Repositorio
         ↓
-Base de datos PostgreSQL
+PostgreSQL
 ```
 
-## 1. ¿Qué vamos a construir?
-
-Vamos a crear un servidor que permita trabajar con estudiantes.
-
-El servidor tendrá endpoints como:
+Vamos a crear dos rutas principales:
 
 ```text
-GET    /api/students       → listar estudiantes
-GET    /api/students/:id   → buscar un estudiante por id
-POST   /api/students       → crear un estudiante
-PUT    /api/students/:id   → actualizar un estudiante
-DELETE /api/students/:id   → eliminar un estudiante
+GET  /coders    → listar coders
+POST /coders    → crear un coder
+GET  /          → revisar si la API está activa
 ```
 
-Usaremos la tabla `students`, que ya aparece en la práctica principal del módulo.
+## 1. Requisitos
 
-## 2. Requisitos previos
-
-Antes de empezar necesitas tener:
+Antes de empezar necesitas:
 
 - Node.js instalado.
 - npm instalado.
 - Docker funcionando.
 - PostgreSQL levantado con el `docker-compose.yml` del proyecto.
-- Un cliente para probar la API, por ejemplo Postman, Insomnia, Thunder Client o el navegador.
+- Postman, Insomnia, Thunder Client o una herramienta parecida para probar la API.
 
-Puedes verificar Node.js y npm con:
+Verifica Node.js y npm:
 
 ```bash
 node --version
 npm --version
 ```
 
-También verifica que PostgreSQL esté corriendo:
+Verifica que PostgreSQL esté corriendo:
 
 ```bash
 docker ps
 ```
 
-Deberías ver un contenedor llamado:
+Deberías ver el contenedor de PostgreSQL activo.
 
-```text
-riwi-postgres
-```
+## 2. Datos de conexión
 
-## 3. Datos de conexión a PostgreSQL
-
-Según el archivo `docker-compose.yml` de este proyecto, la base de datos usa estos datos:
+En este proyecto PostgreSQL usa estos datos:
 
 ```text
 Host: localhost
@@ -71,1059 +59,520 @@ User: postgres
 Password: postgres123
 ```
 
-Importante: dentro del contenedor PostgreSQL escucha en el puerto `5432`, pero desde tu computador lo estás exponiendo en el puerto `5433`.
+Importante: aunque PostgreSQL dentro del contenedor usa el puerto `5432`, desde tu computador lo usas por el puerto `5433`.
 
-Por eso, desde Node.js usaremos:
+## 3. Crear la carpeta del servidor
 
-```text
-localhost:5433
-```
-
-## 4. Crear la carpeta del proyecto API
-
-Puedes crear una carpeta separada para la API:
+Crea una carpeta para la API:
 
 ```bash
-mkdir api-express-postgres
-cd api-express-postgres
+mkdir api-coders
+cd api-coders
 ```
 
-Inicializa el proyecto Node.js:
+Inicializa el proyecto:
 
 ```bash
 npm init -y
 ```
 
-Esto crea un archivo `package.json`, que guarda la información del proyecto y sus dependencias.
+Esto crea el archivo `package.json`.
 
-## 5. Instalar dependencias
+## 4. Instalar dependencias
 
-Instala Express, pg y dotenv:
-
-```bash
-npm install express pg dotenv
-```
-
-También puedes instalar `nodemon` para desarrollo:
+Instala Express y pg:
 
 ```bash
-npm install -D nodemon
+npm install express pg
 ```
 
 ¿Para qué sirve cada paquete?
 
 | Paquete | Uso |
 |---|---|
-| `express` | Crear el servidor y las rutas HTTP. |
+| `express` | Crear el servidor y las rutas. |
 | `pg` | Conectarse a PostgreSQL desde Node.js. |
-| `dotenv` | Leer variables de entorno desde un archivo `.env`. |
-| `nodemon` | Reiniciar el servidor automáticamente cuando cambias el código. |
 
-## 6. Configurar los scripts del proyecto
+Opcionalmente instala `nodemon` para desarrollo:
+
+```bash
+npm install -D nodemon
+```
+
+## 5. Configurar scripts
 
 Abre `package.json` y agrega estos scripts:
 
 ```json
 {
   "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "start": "node server.js",
+    "dev": "nodemon server.js"
   }
 }
 ```
 
-Ejemplo completo:
+Si tu archivo `package.json` ya tiene un bloque `"scripts"`, reemplázalo por ese.
 
-```json
-{
-  "name": "api-express-postgres",
-  "version": "1.0.0",
-  "description": "API con Express y PostgreSQL",
-  "main": "src/server.js",
-  "scripts": {
-    "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
-  },
-  "dependencies": {
-    "dotenv": "^16.0.0",
-    "express": "^4.18.0",
-    "pg": "^8.0.0"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.0"
-  }
-}
-```
+## 6. Crear los archivos del proyecto
 
-No pasa nada si las versiones exactas son diferentes. npm instalará versiones actuales compatibles.
-
-## 7. Crear la estructura de carpetas
-
-Crea esta estructura:
+El proyecto tendrá esta estructura simple:
 
 ```text
-api-express-postgres/
-├── src/
-│   ├── config/
-│   │   └── db.js
-│   ├── controllers/
-│   │   └── students.controller.js
-│   ├── routes/
-│   │   └── students.routes.js
-│   └── server.js
-├── .env
-├── .gitignore
+api-coders/
+├── db.js
+├── repositorio.js
+├── server.js
 └── package.json
 ```
 
-Puedes crear las carpetas con:
+Crea los archivos:
 
 ```bash
-mkdir -p src/config src/controllers src/routes
+touch db.js repositorio.js server.js
 ```
 
-## 8. Crear el archivo `.env`
+## 7. Crear la tabla `coders`
 
-El archivo `.env` guarda datos sensibles o configurables.
+Antes de programar el servidor, crea la tabla en PostgreSQL.
 
-Crea un archivo llamado `.env`:
+Puedes ejecutar este SQL en DBeaver:
 
-```env
-PORT=3000
-
-DB_HOST=localhost
-DB_PORT=5433
-DB_NAME=riwi_db
-DB_USER=postgres
-DB_PASSWORD=postgres123
+```sql
+CREATE TABLE IF NOT EXISTS coders (
+    id SERIAL PRIMARY KEY,
+    tipo_documento VARCHAR(20) NOT NULL,
+    numero_documento VARCHAR(30) UNIQUE NOT NULL,
+    nombres VARCHAR(80) NOT NULL,
+    apellidos VARCHAR(80) NOT NULL,
+    correo VARCHAR(120) UNIQUE NOT NULL,
+    telefono VARCHAR(30),
+    fecha_ingreso DATE NOT NULL,
+    id_cohorte INT NOT NULL
+);
 ```
 
-¿Por qué usar `.env`?
+También puedes insertar algunos datos de prueba:
 
-Porque no es buena práctica escribir usuarios, contraseñas o puertos directamente dentro del código.
-
-También crea un archivo `.gitignore`:
-
-```gitignore
-node_modules
-.env
+```sql
+INSERT INTO coders (
+    tipo_documento,
+    numero_documento,
+    nombres,
+    apellidos,
+    correo,
+    telefono,
+    fecha_ingreso,
+    id_cohorte
+) VALUES
+('CC', '1001', 'Ana', 'Gomez', 'ana.gomez@email.com', '3001112233', '2026-01-15', 1),
+('CC', '1002', 'Luis', 'Martinez', 'luis.martinez@email.com', '3004445566', '2026-01-15', 1);
 ```
 
-Esto evita subir dependencias y credenciales al repositorio.
+Revisa que los datos existan:
 
-## 9. Crear la conexión a PostgreSQL con `pg`
+```sql
+SELECT * FROM coders;
+```
 
-Crea el archivo `src/config/db.js`:
+## 8. Crear la conexión a PostgreSQL
+
+Abre `db.js` y escribe:
 
 ```js
 const { Pool } = require('pg');
-require('dotenv').config();
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  port: process.env.DB_PORT,
-  database: process.env.DB_NAME,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
+    host: 'localhost',
+    port: 5433,
+    database: 'riwi_db',
+    user: 'postgres',
+    password: 'postgres123',
 });
 
 module.exports = pool;
 ```
 
-### ¿Qué es `Pool`?
-
-`Pool` es un administrador de conexiones.
-
-En lugar de abrir y cerrar una conexión nueva para cada consulta, `pg` mantiene un grupo de conexiones reutilizables.
-
-Ejemplo mental:
-
-```text
-Servidor Express
-        ↓
-Pool de conexiones
-        ↓
-Conexión 1, Conexión 2, Conexión 3...
-        ↓
-PostgreSQL
-```
-
-Esto es más eficiente que crear una conexión desde cero en cada petición.
-
-## 10. Probar la conexión a la base de datos
-
-Antes de crear todos los endpoints, puedes probar la conexión agregando temporalmente este archivo:
-
-```text
-src/test-db.js
-```
-
-```js
-const pool = require('./config/db');
-
-async function testConnection() {
-  try {
-    const result = await pool.query('SELECT NOW()');
-    console.log('Conexión exitosa:', result.rows[0]);
-  } catch (error) {
-    console.error('Error conectando a la base de datos:', error.message);
-  } finally {
-    await pool.end();
-  }
-}
-
-testConnection();
-```
-
-Ejecuta:
-
-```bash
-node src/test-db.js
-```
-
-Si todo está bien, verás algo parecido a:
-
-```text
-Conexión exitosa: { now: 2026-06-24T... }
-```
-
-Si aparece un error, revisa:
-
-- Que el contenedor esté encendido.
-- Que el puerto sea `5433`.
-- Que la contraseña sea `postgres123`.
-- Que la base de datos se llame `riwi_db`.
-
-Después de probar, puedes borrar `src/test-db.js` o dejarlo solo como archivo de práctica.
-
-## 11. Crear la tabla `students`
-
-Si aún no tienes la tabla, ejecútala en DBeaver o en `psql`:
-
-```sql
-CREATE TABLE IF NOT EXISTS students (
-    id SERIAL PRIMARY KEY,
-    first_name VARCHAR(80) NOT NULL,
-    last_name VARCHAR(80) NOT NULL,
-    email VARCHAR(120) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-Inserta algunos datos de prueba:
-
-```sql
-INSERT INTO students (first_name, last_name, email)
-VALUES
-('Ana', 'Gómez', 'ana.gomez@email.com'),
-('Luis', 'Martínez', 'luis.martinez@email.com'),
-('Camila', 'Torres', 'camila.torres@email.com');
-```
-
-Consulta los datos:
-
-```sql
-SELECT * FROM students;
-```
-
-## 12. Crear el servidor Express
-
-Crea el archivo `src/server.js`:
-
-```js
-const express = require('express');
-const studentsRoutes = require('./routes/students.routes');
-require('dotenv').config();
-
-const app = express();
-const PORT = process.env.PORT || 3000;
-
-app.use(express.json());
-
-app.get('/', (req, res) => {
-  res.json({
-    message: 'API de estudiantes funcionando correctamente',
-  });
-});
-
-app.use('/api/students', studentsRoutes);
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en http://localhost:${PORT}`);
-});
-```
-
-### Explicación del archivo
-
-```js
-const express = require('express');
-```
-
-Importa Express.
-
-```js
-const app = express();
-```
-
-Crea la aplicación.
-
-```js
-app.use(express.json());
-```
-
-Permite recibir datos en formato JSON desde el body de las peticiones.
-
-```js
-app.use('/api/students', studentsRoutes);
-```
-
-Le dice al servidor que todas las rutas de estudiantes empezarán con:
-
-```text
-/api/students
-```
-
-## 13. Crear las rutas de estudiantes
-
-Crea el archivo `src/routes/students.routes.js`:
-
-```js
-const express = require('express');
-const {
-  getStudents,
-  getStudentById,
-  createStudent,
-  updateStudent,
-  deleteStudent,
-} = require('../controllers/students.controller');
-
-const router = express.Router();
-
-router.get('/', getStudents);
-router.get('/:id', getStudentById);
-router.post('/', createStudent);
-router.put('/:id', updateStudent);
-router.delete('/:id', deleteStudent);
-
-module.exports = router;
-```
-
 ### ¿Qué hace este archivo?
 
-Este archivo define las rutas, pero no contiene la lógica completa.
+Este archivo crea la conexión con PostgreSQL.
 
-Por ejemplo:
+`Pool` permite reutilizar conexiones a la base de datos. Así no tienes que abrir una conexión nueva manualmente cada vez que haces una consulta.
 
-```js
-router.get('/', getStudents);
-```
+## 9. Crear el repositorio
 
-Significa:
+El repositorio será el archivo encargado de hablar con la base de datos.
 
-```text
-Cuando llegue una petición GET a /api/students,
-ejecuta la función getStudents.
-```
-
-Separar rutas y controladores ayuda a mantener el código más limpio.
-
-## 14. Crear los controladores
-
-Crea el archivo `src/controllers/students.controller.js`:
+Abre `repositorio.js` y escribe:
 
 ```js
-const pool = require('../config/db');
+const pool = require('./db');
 
-const getStudents = async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT id, first_name, last_name, email, created_at FROM students ORDER BY id'
-    );
-
-    res.json(result.rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: 'Error al obtener los estudiantes',
-    });
-  }
+const getUsers = async () => {
+    const result = await pool.query('SELECT * FROM coders ORDER BY id');
+    return result.rows;
 };
 
-const getStudentById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
+const createUser = async (
+    tipo_documento,
+    numero_documento,
+    nombres,
+    apellidos,
+    correo,
+    telefono,
+    fecha_ingreso,
+    id_cohorte
+) => {
     const result = await pool.query(
-      'SELECT id, first_name, last_name, email, created_at FROM students WHERE id = $1',
-      [id]
+        `INSERT INTO coders (
+            tipo_documento,
+            numero_documento,
+            nombres,
+            apellidos,
+            correo,
+            telefono,
+            fecha_ingreso,
+            id_cohorte
+        ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        RETURNING *`,
+        [
+            tipo_documento,
+            numero_documento,
+            nombres,
+            apellidos,
+            correo,
+            telefono,
+            fecha_ingreso,
+            id_cohorte,
+        ]
     );
 
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: 'Estudiante no encontrado',
-      });
-    }
-
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: 'Error al obtener el estudiante',
-    });
-  }
-};
-
-const createStudent = async (req, res) => {
-  try {
-    const { first_name, last_name, email } = req.body;
-
-    if (!first_name || !last_name || !email) {
-      return res.status(400).json({
-        message: 'first_name, last_name y email son obligatorios',
-      });
-    }
-
-    const result = await pool.query(
-      `INSERT INTO students (first_name, last_name, email)
-       VALUES ($1, $2, $3)
-       RETURNING id, first_name, last_name, email, created_at`,
-      [first_name, last_name, email]
-    );
-
-    res.status(201).json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-
-    if (error.code === '23505') {
-      return res.status(409).json({
-        message: 'Ya existe un estudiante con ese email',
-      });
-    }
-
-    res.status(500).json({
-      message: 'Error al crear el estudiante',
-    });
-  }
-};
-
-const updateStudent = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { first_name, last_name, email } = req.body;
-
-    if (!first_name || !last_name || !email) {
-      return res.status(400).json({
-        message: 'first_name, last_name y email son obligatorios',
-      });
-    }
-
-    const result = await pool.query(
-      `UPDATE students
-       SET first_name = $1,
-           last_name = $2,
-           email = $3
-       WHERE id = $4
-       RETURNING id, first_name, last_name, email, created_at`,
-      [first_name, last_name, email, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: 'Estudiante no encontrado',
-      });
-    }
-
-    res.json(result.rows[0]);
-  } catch (error) {
-    console.error(error);
-
-    if (error.code === '23505') {
-      return res.status(409).json({
-        message: 'Ya existe un estudiante con ese email',
-      });
-    }
-
-    res.status(500).json({
-      message: 'Error al actualizar el estudiante',
-    });
-  }
-};
-
-const deleteStudent = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const result = await pool.query(
-      'DELETE FROM students WHERE id = $1 RETURNING id, first_name, last_name, email',
-      [id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({
-        message: 'Estudiante no encontrado',
-      });
-    }
-
-    res.json({
-      message: 'Estudiante eliminado correctamente',
-      student: result.rows[0],
-    });
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({
-      message: 'Error al eliminar el estudiante',
-    });
-  }
+    return result.rows[0];
 };
 
 module.exports = {
-  getStudents,
-  getStudentById,
-  createStudent,
-  updateStudent,
-  deleteStudent,
+    getUsers,
+    createUser,
 };
 ```
 
-## 15. Entender `pool.query`
+### ¿Qué hace `getUsers`?
 
-La forma básica de hacer una consulta es:
-
-```js
-const result = await pool.query('SELECT * FROM students');
-```
-
-El resultado trae varias propiedades, pero la más usada es:
+Consulta todos los registros de la tabla `coders`:
 
 ```js
-result.rows
+const result = await pool.query('SELECT * FROM coders ORDER BY id');
+return result.rows;
 ```
 
-Ejemplo:
+`result.rows` contiene los datos que PostgreSQL devuelve.
+
+### ¿Qué hace `createUser`?
+
+Inserta un nuevo coder en la tabla `coders`:
 
 ```js
-const result = await pool.query('SELECT * FROM students');
-console.log(result.rows);
+INSERT INTO coders (...) VALUES (...) RETURNING *
 ```
 
-Si la tabla tiene tres estudiantes, `result.rows` será un arreglo con tres objetos.
+`RETURNING *` hace que PostgreSQL devuelva el registro recién creado.
 
-## 16. Consultas parametrizadas
+## 10. Crear el servidor Express
 
-Cuando recibimos datos externos, no debemos concatenarlos directamente en el SQL.
-
-Mal ejemplo:
+Abre `server.js` y escribe:
 
 ```js
-const result = await pool.query(
-  `SELECT * FROM students WHERE id = ${id}`
-);
+const express = require('express');
+const { getUsers, createUser } = require('./repositorio');
+
+const app = express();
+const PORT = process.env.PORT || 3001;
+
+app.use(express.json());
+
+app.get('/coders', async (req, res) => {
+    try {
+        const coders = await getUsers();
+        res.json(coders);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al consultar coders' });
+    }
+});
+
+app.post('/coders', async (req, res) => {
+    try {
+        const {
+            tipo_documento,
+            numero_documento,
+            nombres,
+            apellidos,
+            correo,
+            telefono,
+            fecha_ingreso,
+            id_cohorte,
+        } = req.body;
+
+        const coder = await createUser(
+            tipo_documento,
+            numero_documento,
+            nombres,
+            apellidos,
+            correo,
+            telefono,
+            fecha_ingreso,
+            id_cohorte
+        );
+
+        res.status(201).json(coder);
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ error: 'Error al crear coder' });
+    }
+});
+
+app.get('/', (req, res) => {
+    res.send('API de coders activa');
+});
+
+app.listen(PORT, () => {
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
+});
 ```
 
-Esto puede abrir la puerta a inyección SQL.
+## 11. Entender el servidor paso a paso
 
-Mejor ejemplo:
+Importamos Express:
 
 ```js
-const result = await pool.query(
-  'SELECT * FROM students WHERE id = $1',
-  [id]
-);
+const express = require('express');
 ```
 
-Aquí `$1` representa el primer valor del arreglo:
+Importamos las funciones del repositorio:
 
 ```js
-[id]
+const { getUsers, createUser } = require('./repositorio');
 ```
 
-Otro ejemplo con tres valores:
+Creamos la aplicación:
 
 ```js
-const result = await pool.query(
-  `INSERT INTO students (first_name, last_name, email)
-   VALUES ($1, $2, $3)
-   RETURNING *`,
-  [first_name, last_name, email]
-);
+const app = express();
 ```
 
-Relación:
+Definimos el puerto:
 
-| Marcador | Valor |
-|---|---|
-| `$1` | `first_name` |
-| `$2` | `last_name` |
-| `$3` | `email` |
+```js
+const PORT = process.env.PORT || 3001;
+```
 
-## 17. Ejecutar el servidor
+Activamos la lectura de JSON:
 
-En modo desarrollo:
+```js
+app.use(express.json());
+```
+
+Esto permite recibir datos enviados en el body de una petición `POST`.
+
+Creamos la ruta para listar coders:
+
+```js
+app.get('/coders', async (req, res) => {
+    const coders = await getUsers();
+    res.json(coders);
+});
+```
+
+Creamos la ruta para insertar coders:
+
+```js
+app.post('/coders', async (req, res) => {
+    const coder = await createUser(...);
+    res.status(201).json(coder);
+});
+```
+
+Creamos una ruta simple para probar el servidor:
+
+```js
+app.get('/', (req, res) => {
+    res.send('API de coders activa');
+});
+```
+
+Finalmente levantamos el servidor:
+
+```js
+app.listen(PORT, () => {
+    console.log(`Servidor escuchando en el puerto ${PORT}`);
+});
+```
+
+## 12. Ejecutar el servidor
+
+Si instalaste `nodemon`, ejecuta:
 
 ```bash
 npm run dev
 ```
 
-O en modo normal:
+Si no instalaste `nodemon`, ejecuta:
 
 ```bash
 npm start
 ```
 
-Si todo va bien, verás:
+Deberías ver algo parecido a:
 
 ```text
-Servidor corriendo en http://localhost:3000
+Servidor escuchando en el puerto 3001
 ```
 
 Abre en el navegador:
 
 ```text
-http://localhost:3000
+http://localhost:3001/
 ```
 
-Deberías recibir:
+Deberías ver:
 
-```json
-{
-  "message": "API de estudiantes funcionando correctamente"
-}
+```text
+API de coders activa
 ```
 
-## 18. Probar los endpoints
+## 13. Probar `GET /coders`
 
-### Listar estudiantes
+En Postman, Thunder Client o el navegador, prueba:
 
-Petición:
-
-```http
-GET http://localhost:3000/api/students
+```text
+GET http://localhost:3001/coders
 ```
 
-Respuesta esperada:
+Si todo está bien, recibirás un arreglo con los coders:
 
 ```json
 [
   {
     "id": 1,
-    "first_name": "Ana",
-    "last_name": "Gómez",
-    "email": "ana.gomez@email.com",
-    "created_at": "2026-06-24T..."
+    "tipo_documento": "CC",
+    "numero_documento": "1001",
+    "nombres": "Ana",
+    "apellidos": "Gomez",
+    "correo": "ana.gomez@email.com",
+    "telefono": "3001112233",
+    "fecha_ingreso": "2026-01-15T05:00:00.000Z",
+    "id_cohorte": 1
   }
 ]
 ```
 
-### Buscar un estudiante por id
+## 14. Probar `POST /coders`
 
-Petición:
+En Postman o Thunder Client:
 
-```http
-GET http://localhost:3000/api/students/1
+```text
+POST http://localhost:3001/coders
 ```
 
-Respuesta esperada:
+En el body selecciona `JSON` y envía:
 
 ```json
 {
-  "id": 1,
-  "first_name": "Ana",
-  "last_name": "Gómez",
-  "email": "ana.gomez@email.com",
-  "created_at": "2026-06-24T..."
+  "tipo_documento": "CC",
+  "numero_documento": "1003",
+  "nombres": "Camila",
+  "apellidos": "Torres",
+  "correo": "camila.torres@email.com",
+  "telefono": "3007778899",
+  "fecha_ingreso": "2026-01-20",
+  "id_cohorte": 1
 }
 ```
 
-Si no existe:
+Si funciona, la API responderá con el coder creado.
 
-```json
-{
-  "message": "Estudiante no encontrado"
-}
-```
+## 15. ¿Por qué usamos `$1`, `$2`, `$3`?
 
-### Crear un estudiante
+En `repositorio.js` usamos una consulta así:
 
-Petición:
-
-```http
-POST http://localhost:3000/api/students
-Content-Type: application/json
-```
-
-Body:
-
-```json
-{
-  "first_name": "Sofía",
-  "last_name": "Ramírez",
-  "email": "sofia.ramirez@email.com"
-}
-```
-
-Respuesta esperada:
-
-```json
-{
-  "id": 4,
-  "first_name": "Sofía",
-  "last_name": "Ramírez",
-  "email": "sofia.ramirez@email.com",
-  "created_at": "2026-06-24T..."
-}
-```
-
-### Actualizar un estudiante
-
-Petición:
-
-```http
-PUT http://localhost:3000/api/students/4
-Content-Type: application/json
-```
-
-Body:
-
-```json
-{
-  "first_name": "Sofía",
-  "last_name": "Ramírez Castro",
-  "email": "sofia.ramirez@email.com"
-}
-```
-
-Respuesta esperada:
-
-```json
-{
-  "id": 4,
-  "first_name": "Sofía",
-  "last_name": "Ramírez Castro",
-  "email": "sofia.ramirez@email.com",
-  "created_at": "2026-06-24T..."
-}
-```
-
-### Eliminar un estudiante
-
-Petición:
-
-```http
-DELETE http://localhost:3000/api/students/4
-```
-
-Respuesta esperada:
-
-```json
-{
-  "message": "Estudiante eliminado correctamente",
-  "student": {
-    "id": 4,
-    "first_name": "Sofía",
-    "last_name": "Ramírez Castro",
-    "email": "sofia.ramirez@email.com"
-  }
-}
-```
-
-## 19. Probar con `curl`
-
-También puedes probar desde la terminal.
-
-Listar:
-
-```bash
-curl http://localhost:3000/api/students
-```
-
-Crear:
-
-```bash
-curl -X POST http://localhost:3000/api/students \
-  -H "Content-Type: application/json" \
-  -d '{"first_name":"Mario","last_name":"Ruiz","email":"mario.ruiz@email.com"}'
-```
-
-Actualizar:
-
-```bash
-curl -X PUT http://localhost:3000/api/students/1 \
-  -H "Content-Type: application/json" \
-  -d '{"first_name":"Ana","last_name":"Gómez Pérez","email":"ana.gomez@email.com"}'
-```
-
-Eliminar:
-
-```bash
-curl -X DELETE http://localhost:3000/api/students/1
-```
-
-## 20. Códigos de estado HTTP usados
-
-| Código | Significado | Cuándo lo usamos |
-|---|---|---|
-| `200` | OK | Consulta, actualización o eliminación exitosa. |
-| `201` | Created | Recurso creado correctamente. |
-| `400` | Bad Request | Faltan datos obligatorios. |
-| `404` | Not Found | El estudiante no existe. |
-| `409` | Conflict | El email ya existe. |
-| `500` | Internal Server Error | Error inesperado en el servidor. |
-
-## 21. Errores comunes y solución
-
-### Error: `ECONNREFUSED`
-
-Significa que Node.js no pudo conectarse a PostgreSQL.
-
-Revisa:
-
-- Que Docker esté encendido.
-- Que el contenedor `riwi-postgres` esté corriendo.
-- Que estés usando el puerto `5433`.
-
-### Error: `password authentication failed`
-
-La contraseña es incorrecta.
-
-Revisa el `.env`:
-
-```env
-DB_PASSWORD=postgres123
-```
-
-### Error: `database "riwi_db" does not exist`
-
-La base de datos no existe o escribiste mal el nombre.
-
-Revisa:
-
-```env
-DB_NAME=riwi_db
-```
-
-### Error: `relation "students" does not exist`
-
-La tabla `students` no existe.
-
-Solución:
-
-```sql
-CREATE TABLE IF NOT EXISTS students (
-    id SERIAL PRIMARY KEY,
-    first_name VARCHAR(80) NOT NULL,
-    last_name VARCHAR(80) NOT NULL,
-    email VARCHAR(120) UNIQUE NOT NULL,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+```js
+await pool.query(
+    'INSERT INTO coders (...) VALUES ($1, $2, $3)',
+    [valor1, valor2, valor3]
 );
 ```
 
-### Error: `duplicate key value violates unique constraint`
+Eso se llama consulta parametrizada.
 
-Estás intentando crear dos estudiantes con el mismo email.
+Sirve para enviar datos de forma más segura a PostgreSQL.
 
-La columna `email` tiene esta restricción:
-
-```sql
-email VARCHAR(120) UNIQUE NOT NULL
-```
-
-Eso significa:
-
-- `UNIQUE`: no se puede repetir.
-- `NOT NULL`: no puede estar vacío.
-
-## 22. Buenas prácticas importantes
-
-### No guardar credenciales directamente en el código
-
-Evita esto:
+No es recomendable hacer esto:
 
 ```js
-const pool = new Pool({
-  user: 'postgres',
-  password: 'postgres123',
-});
+const sql = `SELECT * FROM coders WHERE correo = '${correo}'`;
 ```
 
-Mejor usa variables de entorno:
+Ese estilo puede provocar errores y problemas de seguridad.
 
-```js
-const pool = new Pool({
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-});
-```
+## 16. Errores comunes
 
-### Usar consultas parametrizadas
+### Error de conexión
 
-Evita concatenar datos enviados por el usuario.
-
-Mal:
-
-```js
-`SELECT * FROM students WHERE email = '${email}'`
-```
-
-Bien:
-
-```js
-'SELECT * FROM students WHERE email = $1'
-```
-
-```js
-[email]
-```
-
-### Separar responsabilidades
-
-Una estructura ordenada ayuda a crecer el proyecto:
-
-| Archivo | Responsabilidad |
-|---|---|
-| `server.js` | Configura y arranca Express. |
-| `db.js` | Crea la conexión a PostgreSQL. |
-| `students.routes.js` | Define las rutas. |
-| `students.controller.js` | Ejecuta la lógica y las consultas SQL. |
-
-### No mostrar errores internos al usuario
-
-Evita responder errores técnicos completos:
-
-```js
-res.status(500).json(error);
-```
-
-Mejor:
-
-```js
-console.error(error);
-res.status(500).json({
-  message: 'Error interno del servidor',
-});
-```
-
-Así el desarrollador ve el error en consola, pero el usuario recibe un mensaje limpio.
-
-## 23. Versión simple en un solo archivo
-
-Para una explicación inicial, también se puede hacer todo en un solo archivo.
-
-Crea `server.js`:
-
-```js
-const express = require('express');
-const { Pool } = require('pg');
-
-const app = express();
-const port = 3000;
-
-app.use(express.json());
-
-const pool = new Pool({
-  host: 'localhost',
-  port: 5433,
-  database: 'riwi_db',
-  user: 'postgres',
-  password: 'postgres123',
-});
-
-app.get('/students', async (req, res) => {
-  try {
-    const result = await pool.query('SELECT * FROM students ORDER BY id');
-    res.json(result.rows);
-  } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: 'Error al consultar estudiantes' });
-  }
-});
-
-app.listen(port, () => {
-  console.log(`Servidor corriendo en http://localhost:${port}`);
-});
-```
-
-Esta versión sirve para aprender rápido, pero para proyectos reales es mejor separar archivos como hicimos en la guía.
-
-## 24. Reto práctico
-
-Cuando termines la API de estudiantes, crea una API para cursos.
-
-Tabla:
-
-```sql
-CREATE TABLE IF NOT EXISTS courses (
-    id SERIAL PRIMARY KEY,
-    name VARCHAR(120) NOT NULL,
-    description TEXT,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
-
-Endpoints sugeridos:
+Si aparece un error como:
 
 ```text
-GET    /api/courses
-GET    /api/courses/:id
-POST   /api/courses
-PUT    /api/courses/:id
-DELETE /api/courses/:id
+ECONNREFUSED
 ```
 
-Luego crea un endpoint avanzado:
+Revisa que PostgreSQL esté corriendo:
+
+```bash
+docker ps
+```
+
+También revisa que el puerto sea `5433`.
+
+### Error porque la tabla no existe
+
+Si aparece:
 
 ```text
-GET /api/students/:id/courses
+relation "coders" does not exist
 ```
 
-Ese endpoint debería listar los cursos en los que está inscrito un estudiante.
+Significa que falta crear la tabla `coders`.
 
-Para resolverlo necesitarás usar un `JOIN` entre:
+Ejecuta el SQL del paso 7.
 
-- `students`
-- `enrollments`
-- `courses`
+### Error por correo o documento repetido
 
-Ejemplo de consulta:
+Si intentas crear dos coders con el mismo `correo` o `numero_documento`, PostgreSQL puede mostrar un error porque esos campos son únicos.
 
-```sql
-SELECT
-    s.id AS student_id,
-    s.first_name,
-    s.last_name,
-    c.id AS course_id,
-    c.name AS course_name,
-    e.enrollment_date
-FROM students s
-INNER JOIN enrollments e ON s.id = e.student_id
-INNER JOIN courses c ON c.id = e.course_id
-WHERE s.id = $1;
-```
+Cambia esos datos e intenta de nuevo.
 
-## 25. Resumen final
+## 17. Resumen
 
-En esta guía aprendiste a:
+En esta guía hiciste lo siguiente:
 
-- Crear un servidor con Express.
-- Conectarte a PostgreSQL usando `pg`.
-- Configurar variables de entorno con `.env`.
-- Crear rutas para una API REST.
-- Separar rutas, controladores y configuración.
-- Ejecutar consultas SQL desde Node.js.
-- Usar consultas parametrizadas para evitar inyección SQL.
-- Manejar errores comunes.
-- Probar endpoints con navegador, Postman o `curl`.
+- Creaste un proyecto Node.js.
+- Instalaste Express y pg.
+- Creaste una tabla `coders`.
+- Conectaste Node.js con PostgreSQL.
+- Separaste las consultas en `repositorio.js`.
+- Creaste un servidor simple con `server.js`.
+- Probaste `GET /coders`.
+- Probaste `POST /coders`.
 
-La idea principal es esta:
+El flujo final queda así:
 
 ```text
-Express recibe la petición
-        ↓
-El controlador procesa la lógica
-        ↓
-pg ejecuta la consulta SQL
-        ↓
-PostgreSQL responde
-        ↓
-Express devuelve JSON al cliente
+Petición HTTP
+    ↓
+server.js
+    ↓
+repositorio.js
+    ↓
+db.js
+    ↓
+PostgreSQL
 ```
-
